@@ -4,7 +4,9 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Color
 import android.os.Bundle
+import android.util.Log
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
@@ -15,9 +17,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.note2020.R
 import com.example.note2020.model.nota
 import com.google.gson.Gson
+import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_main.*
-import kotlinx.coroutines.android.awaitFrame
-import kotlinx.coroutines.awaitAll
+import kotlinx.android.synthetic.main.trash_button.*
 import net.azarquiel.carro2020profe.adapter.CustomAdapter
 import org.jetbrains.anko.*
 import java.text.SimpleDateFormat
@@ -28,26 +30,34 @@ import kotlin.collections.ArrayList
 class MainActivity : AppCompatActivity(), CustomAdapter.OnLongClickNota {
 
     private lateinit var notas:ArrayList<nota>
+    private lateinit var selectedNotas:ArrayList<nota>
+    private lateinit var selectedViewNotas:ArrayList<View>
+
     private lateinit var adapter: CustomAdapter
     private lateinit var preferencias: SharedPreferences
     private lateinit var contadorIdentificador: SharedPreferences
     private lateinit var selectedNote: nota
 
     private var identificador = 0
+    private var deleteMode = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        findViewById<FloatingActionButton>(R.id.fab).setOnClickListener { view ->
+        findViewById<FloatingActionButton>(R.id.fab_add).setOnClickListener { view ->
             Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show()
         }
+
         init()
     }
 
     private fun init() {
+        selectedViewNotas = ArrayList()
+        selectedNotas = ArrayList()
         notas = ArrayList()
+
         preferencias = getSharedPreferences("data", Context.MODE_PRIVATE) //creamos o abrimos el archigo data.xml
 
         contadorIdentificador = getSharedPreferences("identifierCounter", Context.MODE_PRIVATE)
@@ -55,7 +65,9 @@ class MainActivity : AppCompatActivity(), CustomAdapter.OnLongClickNota {
 
         setAdapter()
         getNotas()
-        findViewById<FloatingActionButton>(R.id.fab).setOnClickListener { dialogoAdd() }
+
+        findViewById<FloatingActionButton>(R.id.fab_add).setOnClickListener { dialogoAdd() }
+        findViewById<FloatingActionButton>(R.id.fab_delete).setOnClickListener{ removeNotas()}
     }
 
     private fun setAdapter() {
@@ -95,17 +107,17 @@ class MainActivity : AppCompatActivity(), CustomAdapter.OnLongClickNota {
         }.show()
     }
 
-    private fun dialogoRemove(nota: nota){
+    /*private fun dialogoRemove(nota: nota){
         alert {
             title = "Eliminar nota"
             message = "Estas seguro de que quieres eliminar \"${nota.nombre}\""
             positiveButton("Si"){
-                removeNota(nota)
+                removeNotas(nota)
             }
             negativeButton("No"){
             }
         }.show()
-    }
+    }*/
 
     private fun addNota(nombre: String, asunto: String?) {
         val editorId = contadorIdentificador.edit()
@@ -125,13 +137,19 @@ class MainActivity : AppCompatActivity(), CustomAdapter.OnLongClickNota {
 
     }
 
-    private fun removeNota(nota: nota) {
-        val editor = preferencias.edit()
-        editor.remove(nota.id.toString())
-        editor.commit()
+    private fun removeNotas() {
+        if (selectedNotas!=null) {
+            selectedNotas.forEach() {
+                val editor = preferencias.edit()
+                editor.remove(it.id.toString())
+                editor.commit()
 
-        notas.remove(nota)
-        adapter.setNotas(notas)
+                notas.remove(it)
+                adapter.setNotas(notas)
+            }
+        }
+
+        deleteMode(false)
     }
 
     private fun editNota(nota: nota, contenido:String?, nombre: String) {
@@ -152,6 +170,19 @@ class MainActivity : AppCompatActivity(), CustomAdapter.OnLongClickNota {
         adapter.setNotas(notas) //actualizamos el recycleview
     }
 
+    private fun deleteMode(bandera:Boolean){
+        deleteMode=bandera
+        if (bandera==true){
+            fab_delete.visibility=View.VISIBLE
+            fab_add.visibility=View.GONE
+        }else{
+            fab_delete.visibility=View.GONE
+            fab_add.visibility=View.VISIBLE
+            selectedNotas = ArrayList()
+            selectedViewNotas = ArrayList()
+        }
+    }
+
     @SuppressLint("SimpleDateFormat")
     fun obtenerFechaConFormato(): String {
         val calendar: Calendar = Calendar.getInstance()
@@ -162,21 +193,45 @@ class MainActivity : AppCompatActivity(), CustomAdapter.OnLongClickNota {
         return sdf.format(date)
     }
 
-    override fun onLongClickNota(nota: nota): Boolean {
-        dialogoRemove(nota)
-        return super.onLongClickNota(nota)
+    override fun onLongClickNota(nota: nota, itemView: View): Boolean {
+        //dialogoRemove(nota)
+        itemView.backgroundColor = Color.RED
+        itemView.translationZ = 0F
+        selectedViewNotas.add(itemView)
+        selectedNotas.add(nota)
+
+        deleteMode(true)
+        return super.onLongClickNota(nota, itemView)
     }
 
     fun onClickNota(v: View){
-        selectedNote = v.tag as nota
-        val intent = Intent(applicationContext, NoteEditor::class.java)
-        intent.putExtra("nombreNota", selectedNote.nombre)
-        intent.putExtra("contenidoNota", selectedNote.contenido)
-        intent.putExtra("idNota", selectedNote.id)
-        intent.putExtra("fechaNota", selectedNote.fecha)
+        if (deleteMode){
+            selectedViewNotas.forEach() {
+                if (it.tag == v.tag) {
+                    v.backgroundColor = Color.BLACK
+                    v.translationZ = 12F
+                    selectedViewNotas.remove(v)
+                    Log.d("app", "${v.tag}")
+                } else {
+                    v.backgroundColor = Color.RED
+                    v.translationZ = 0F
+                    Log.d("app", "${v.tag}")
+                    selectedViewNotas.add(v)
+                }
 
-        startActivityForResult(intent, CONTENT_NOTE)
-        //overridePendingTransition(R.drawable.left_in, R.drawable.left_out); <--- animacion en desarrollo
+            }
+
+        }else {
+            selectedNote = v.tag as nota
+            val intent = Intent(applicationContext, NoteEditor::class.java)
+            intent.putExtra("nombreNota", selectedNote.nombre)
+            intent.putExtra("contenidoNota", selectedNote.contenido)
+            intent.putExtra("idNota", selectedNote.id)
+            intent.putExtra("fechaNota", selectedNote.fecha)
+
+            startActivityForResult(intent, CONTENT_NOTE)
+            //overridePendingTransition(R.drawable.left_in, R.drawable.left_out); <--- animacion en desarrollo
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

@@ -39,7 +39,7 @@
                 android:layout_height="wrap_content"
                 android:foregroundTint="#FFFFFF"
                 android:gravity="top|left"
-                android:padding="30dp"
+                android:padding="25dp"
                 android:text="TextView"
                 android:textColor="#FFFFFF"
                 android:textSize="20sp"
@@ -48,7 +48,7 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="@+id/tv_editNoteContent"
                 android:textCursorDrawable="@null"
-                android:inputType="textNoSuggestions"/>
+                android:inputType="textMultiLine"/>
         </LinearLayout>
 
     </LinearLayout>

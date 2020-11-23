@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import com.example.note2020.R
@@ -50,6 +51,7 @@ class NoteEditor : AppCompatActivity() {
 
 
     override fun finish() {
+        Log.d("app", tv_editNoteContent.text.toString())
         var data = Intent()
         data.putExtra("contenidoNota", tv_editNoteContent.text.toString())
         data.putExtra("nombreNota", et_nombreNota.text.toString())

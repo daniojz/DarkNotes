@@ -1,6 +1,5 @@
 package net.azarquiel.carro2020profe.adapter
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
@@ -8,8 +7,6 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.note2020.model.nota
 import kotlinx.android.synthetic.main.custom_card_nota.view.*
-import java.text.SimpleDateFormat
-import java.util.*
 
 
 /**
@@ -51,23 +48,27 @@ class CustomAdapter(
 
             itemView.card_tvNombre.text = dataItem.nombre
             itemView.card_tvFecha.text = dataItem.fecha
+
             if (dataItem.contenido!=null) {
-                val data = dataItem.contenido?.replace("\n", " ").toString() //quitar los espacios y saltos de linea
-                if (dataItem.contenido.toString().length>120) {
-                    itemView.card_tvAsunto.text = data.substring(0, 120) + "..."
+                val data = dataItem.contenido
+                if (dataItem.contenido.toString().length>200) {
+                    if (data != null) {
+                        itemView.card_tvAsunto.text = data.substring(0, 200) + "..."
+                    }
                 }else {
                     itemView.card_tvAsunto.text = data
                 }
             }else{
                 itemView.card_tvAsunto.text = " "
             }
+
             itemView.tag = dataItem
-            itemView.setOnLongClickListener{listener.onLongClickNota(dataItem)}
+            itemView.setOnLongClickListener{listener.onLongClickNota(dataItem, itemView)}
         }
     }
-    
+
     interface OnLongClickNota {
-        fun onLongClickNota(nota: nota):Boolean {
+        fun onLongClickNota(nota: nota, itemView: View):Boolean {
             return true
         }
     }

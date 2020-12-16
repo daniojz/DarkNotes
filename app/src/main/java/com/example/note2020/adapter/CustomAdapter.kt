@@ -27,6 +27,7 @@ class CustomAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.setIsRecyclable(false)
         val item = dataList[position]
         holder.bind(item, listener)
     }

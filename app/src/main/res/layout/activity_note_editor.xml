@@ -36,7 +36,7 @@
             <EditText
                 android:id="@+id/tv_editNoteContent"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:foregroundTint="#FFFFFF"
                 android:gravity="top|left"
                 android:padding="25dp"

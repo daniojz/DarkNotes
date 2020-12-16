@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Color
+import android.graphics.Color.rgb
 import android.os.Bundle
 import android.util.Log
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -13,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.note2020.R
 import com.example.note2020.model.nota
@@ -31,7 +33,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.OnLongClickNota {
 
     private lateinit var notas:ArrayList<nota>
     private lateinit var selectedNotas:ArrayList<nota>
-    private lateinit var selectedViewNotas:ArrayList<View>
 
     private lateinit var adapter: CustomAdapter
     private lateinit var preferencias: SharedPreferences
@@ -54,9 +55,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.OnLongClickNota {
     }
 
     private fun init() {
-        selectedViewNotas = ArrayList()
-        selectedNotas = ArrayList()
         notas = ArrayList()
+        selectedNotas = ArrayList()
 
         preferencias = getSharedPreferences("data", Context.MODE_PRIVATE) //creamos o abrimos el archigo data.xml
 
@@ -107,17 +107,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.OnLongClickNota {
         }.show()
     }
 
-    /*private fun dialogoRemove(nota: nota){
-        alert {
-            title = "Eliminar nota"
-            message = "Estas seguro de que quieres eliminar \"${nota.nombre}\""
-            positiveButton("Si"){
-                removeNotas(nota)
-            }
-            negativeButton("No"){
-            }
-        }.show()
-    }*/
 
     private fun addNota(nombre: String, asunto: String?) {
         val editorId = contadorIdentificador.edit()
@@ -175,11 +164,11 @@ class MainActivity : AppCompatActivity(), CustomAdapter.OnLongClickNota {
         if (bandera==true){
             fab_delete.visibility=View.VISIBLE
             fab_add.visibility=View.GONE
+            selectedNotas = ArrayList() //para luego borrarlas
         }else{
             fab_delete.visibility=View.GONE
             fab_add.visibility=View.VISIBLE
-            selectedNotas = ArrayList()
-            selectedViewNotas = ArrayList()
+            selectedNotas = ArrayList() //reset notas seleccionadas
         }
     }
 
@@ -194,33 +183,43 @@ class MainActivity : AppCompatActivity(), CustomAdapter.OnLongClickNota {
     }
 
     override fun onLongClickNota(nota: nota, itemView: View): Boolean {
-        //dialogoRemove(nota)
-        itemView.backgroundColor = Color.RED
-        itemView.translationZ = 0F
-        selectedViewNotas.add(itemView)
-        selectedNotas.add(nota)
+        var notaPulsada = itemView as CardView
 
-        deleteMode(true)
+        if (deleteMode){
+            deleteMode(false)
+            notaPulsada.setCardBackgroundColor(Color.BLACK)
+        }
+        else {
+            deleteMode(true) //activamos modo borrar, cambiando la vista
+            notaPulsada.setCardBackgroundColor(Color.argb(100,0,0,0))
+            notaPulsada.translationZ = 0F
+
+            selectedNotas.add(nota)
+        }
         return super.onLongClickNota(nota, itemView)
     }
 
     fun onClickNota(v: View){
-        if (deleteMode){
-            selectedViewNotas.forEach() {
-                if (it.tag == v.tag) {
-                    v.backgroundColor = Color.BLACK
-                    v.translationZ = 12F
-                    selectedViewNotas.remove(v)
-                    Log.d("app", "${v.tag}")
-                } else {
-                    v.backgroundColor = Color.RED
-                    v.translationZ = 0F
-                    Log.d("app", "${v.tag}")
-                    selectedViewNotas.add(v)
-                }
+        var notaPulsada = v as CardView //card seleccionado
+        var isSelected = false //bandera para indicar si esta seleccionada o no la nota
 
+        if (deleteMode){
+            Log.d("app", selectedNotas.toString())
+            selectedNotas.forEach() {
+                isSelected = it == v.tag
             }
 
+            if (isSelected){
+                notaPulsada.setCardBackgroundColor(Color.BLACK)
+                notaPulsada.translationZ = 12F
+                selectedNotas.remove(v.tag as nota)
+                Log.d("app", "remove - ${v.tag}")
+            }else {
+                notaPulsada.setCardBackgroundColor(Color.argb(100,0,0,0))
+                notaPulsada.translationZ = 0F
+                Log.d("app", "add - ${v.tag}")
+                selectedNotas.add(v.tag as nota)
+            }
         }else {
             selectedNote = v.tag as nota
             val intent = Intent(applicationContext, NoteEditor::class.java)
